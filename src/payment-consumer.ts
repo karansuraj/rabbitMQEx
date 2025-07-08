@@ -1,13 +1,15 @@
 import * as amqp from 'amqplib';
+import { Payment } from './payment-producer';
+// This is a TypeScript version of the code
 
-interface Payment {
-  gameId: string;
-  playerId: string;
-  amount: number;
-  timestamp: number;
+async function processPayment(payment: Payment): Promise<void> {
+  console.log('⚡ Processing payment:', payment);
+  // Simulate payment processing
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  console.log('✅ Payment confirmed on Lightning Network');
 }
 
-async function processPayments(): Promise<void> {
+async function startConsumer(): Promise<void> {
   try {
     const connection = await amqp.connect('amqp://localhost');
     const channel = await connection.createChannel();
@@ -16,28 +18,29 @@ async function processPayments(): Promise<void> {
     
     console.log('🔄 Waiting for payments. To exit press CTRL+C');
     
-    channel.consume('payments', (msg) => {
-      if (msg === null) return;
-      
-      const payment: Payment = JSON.parse(msg.content.toString());
-      console.log('⚡ Processing payment:', payment);
-      
-      // Simulate Lightning Network payment
-      setTimeout(() => {
-        console.log('✅ Payment confirmed on Lightning Network');
+    channel.consume('payments', async (msg) => {
+      if (msg) {
+        const payment: Payment = JSON.parse(msg.content.toString());
+        await processPayment(payment);
         channel.ack(msg);
-      }, 500);
+      }
     });
     
     // Handle graceful shutdown
-    process.once('SIGINT', async () => {
-      await channel.close();
-      await connection.close();
+    process.on('SIGINT', () => {
+      console.log('\nShutting down consumer...');
+      connection.close()
+        .then(() => process.exit(0))
+        .catch(() => process.exit(1));
     });
+    
   } catch (error) {
     console.error('Error in payment consumer:', error);
     process.exit(1);
   }
 }
 
-processPayments();
+// Start the consumer if this file is run directly
+if (require.main === module) {
+  startConsumer().catch(console.error);
+}

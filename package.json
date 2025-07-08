@@ -1,0 +1,23 @@
+{
+  "name": "rabbitmqex",
+  "version": "1.0.0",
+  "description": "RabbitMQ TypeScript example",
+  "main": "dist/payment-producer.js",
+  "scripts": {
+    "build": "tsc",
+    "producer": "ts-node src/payment-producer.ts",
+    "consumer": "ts-node src/payment-consumer.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.10.8"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.7",
+    "@types/node": "^20.19.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
