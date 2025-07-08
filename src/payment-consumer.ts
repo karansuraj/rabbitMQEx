@@ -1,12 +1,12 @@
 import * as amqp from 'amqplib';
-import { Payment } from './payment-producer';
+import { Payment } from './types';
 // This is a TypeScript version of the code
 
 async function processPayment(payment: Payment): Promise<void> {
   console.log('⚡ Processing payment:', payment);
   // Simulate payment processing
   await new Promise(resolve => setTimeout(resolve, 1000));
-  console.log('✅ Payment confirmed on Lightning Network');
+  console.log('Payment confirmed on Lightning Network');
 }
 
 async function startConsumer(): Promise<void> {
@@ -16,7 +16,7 @@ async function startConsumer(): Promise<void> {
     
     await channel.assertQueue('payments');
     
-    console.log('🔄 Waiting for payments. To exit press CTRL+C');
+    console.log('Waiting for payments. To exit press CTRL+C');
     
     channel.consume('payments', async (msg) => {
       if (msg) {

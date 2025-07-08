@@ -1,33 +1,46 @@
 import * as amqp from 'amqplib';
-// This is a TypeScript version of the code
-export interface Payment {
-  gameId: string;
-  playerId: string;
-  amount: number;
-  timestamp: number;
-}
+import { Payment } from './types';
 
 export async function sendPayment(payment: Omit<Payment, 'timestamp'>): Promise<void> {
+  let connection: amqp.ChannelModel | null = null;
+  let channel: amqp.Channel | null = null;
+  
   try {
-    const connection = await amqp.connect('amqp://localhost');
-    const channel = await connection.createChannel();
+    connection = await amqp.connect('amqp://localhost');
+    channel = await connection.createChannel();
     
-    await channel.assertQueue('payments');
+    // Get queue name from environment variable or use default
+    const queueName = process.env.PAYMENT_QUEUE || 'payments';
+    
+    // Assert the queue with the same options as in the test
+    await channel.assertQueue(queueName, { durable: true });
     
     const paymentWithTimestamp: Payment = {
       ...payment,
       timestamp: Date.now()
     };
     
-    channel.sendToQueue('payments', Buffer.from(JSON.stringify(paymentWithTimestamp)));
-    console.log('💰 Payment sent:', paymentWithTimestamp);
+    const sent = channel.sendToQueue(
+      queueName,
+      Buffer.from(JSON.stringify(paymentWithTimestamp)),
+      { persistent: true }
+    );
     
-    // Give RabbitMQ time to process the message
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await connection.close();
+    if (!sent) {
+      throw new Error('Failed to send payment to queue');
+    }
+    
+    console.log('Payment sent to queue');
   } catch (error) {
-    console.error('Error in payment producer:', error);
+    console.error('Error sending payment:', error);
     throw error;
+  } finally {
+    if (channel) {
+      await channel.close().catch(console.error);
+    }
+    if (connection) {
+      await connection.close().catch(console.error);
+    }
   }
 }
 
@@ -38,16 +51,6 @@ if (require.main === module) {
     amount: 1000 // sats
   };
   
-  // sendPayment(payment)
-  //   .then(() => {
-  //     console.log('Payment sent successfully!');
-  //     // Give it time to actually send before exiting
-  //     setTimeout(() => process.exit(0), 1000);
-  //   })
-  //   .catch((error) => {
-  //     console.error('Payment failed:', error);
-  //     process.exit(1);
-  //   });
   sendPayment(payment)
     .then(() => process.exit(0))
     .catch(() => process.exit(1));

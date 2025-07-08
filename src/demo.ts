@@ -1,8 +1,14 @@
 import { sendPayment } from './payment-producer';
-import { Payment } from './payment-producer';
+import { Payment } from './types';
+
+/* THIS DEMO WILL NOT WORK WITHOUT RUNNING A CONSUMER FIRST 
+  This can be done by running the following command (after installing TS dependencies):
+    npm run consumer
+*/
+
 
 // Testing with sending 10 payments
-async function test1() {
+async function demo1() {
   for (let i = 0; i < 10; i++) {
     const payment: Omit<Payment, 'timestamp'> = {
       gameId: `game${i}`,
@@ -14,7 +20,7 @@ async function test1() {
 }
 
 // Testing with sending payment every 2 seconds
-async function test2() {
+async function demo2() {
   const payment: Omit<Payment, 'timestamp'> = {
     gameId: 'minecraft-456',
     playerId: 'player789',
@@ -23,5 +29,5 @@ async function test2() {
   setInterval(() => sendPayment(payment), 2000);
 }
 
-test1();
-// test2();
+demo1();
+// demo2();
